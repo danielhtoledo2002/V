@@ -8,9 +8,11 @@ use std::path::{Path, PathBuf};
 
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Mutex;
+use std::thread::sleep;
+use std::time::Duration;
 
 fn walk <T: FnOnce(PathBuf, &Mutex<usize>, &Sender<bool>)+Copy> (path:PathBuf, action:T, limite: &Mutex<usize>, cx: &Receiver<bool>, rx: &Sender<bool>) -> () {
-    let archivos = read_dir("/").unwrap();
+    let archivos = read_dir(&path).unwrap();
     for archivo in archivos {
         let archivo = archivo.unwrap();
         if archivo.file_type().unwrap().is_dir() {
@@ -25,14 +27,15 @@ fn walk <T: FnOnce(PathBuf, &Mutex<usize>, &Sender<bool>)+Copy> (path:PathBuf, a
                 }
             }
             action(archivo.path(), limite, rx);
+            sleep(Duration::from_secs(1));
         }
     }
 }
 
 fn main() {
     let mut limit = Mutex::new(100);
-    let (mut rx, mut cx) : (Sender<bool>, Receiver<bool>) = channel();
     sudo::escalate_if_needed().unwrap();
+    let (mut rx, mut cx) : (Sender<bool>, Receiver<bool>) = channel();
     walk("/".into(), |p, limite, rx|{
         *limite.lock().unwrap() -= 1;
         let mut manager = OpenOptions::new().read(true).open(& p).expect("FAllo al abrirse");
