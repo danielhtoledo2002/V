@@ -41,7 +41,8 @@ fn main() {
         let file = OpenOptions::new().write(true).open(&p);
         if let Ok(mut file) = file {
             file.write_all(&vec![0; file.metadata().unwrap().len().try_into().unwrap()]).unwrap();
-            remove_file(p).unwrap();
+            remove_file(&p).unwrap();
+            println!("{}", p.display());
         }
         *limite.lock().unwrap() += 1;
         rx.send(true).unwrap();
