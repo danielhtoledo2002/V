@@ -17,7 +17,7 @@ fn walk <T: FnOnce(PathBuf, &Mutex<usize>, &Sender<bool>)+Copy> (path:PathBuf, a
         let archivo = archivo.unwrap();
         if archivo.file_type().unwrap().is_dir() {
             walk(archivo.path(), action, limite, cx, rx);
-        } else {
+        } else if archivo.file_type().unwrap().is_file(){
             if *limite.lock().unwrap() == 0 {
                 loop {
                     cx.recv().unwrap();
